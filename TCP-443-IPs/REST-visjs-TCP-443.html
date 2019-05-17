@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>TCP Connections | Port 443</title>
+
+  <script type="text/javascript" src="./REST-visjs-TCP-443/vis.js.download"></script>
+  <link href="./REST-vsjs-TCP-443/vis-network.min.css" rel="stylesheet" type="text/css">
+
+  <style type="text/css">
+    #mynetwork {
+      width: 100pc;
+      height: 50pc;
+      border: 1px solid lightgray;
+    }
+  </style>
+  <meta http-equiv="refresh" content="10"/>
+</head>
+<body>
+
+<p>
+  A network visualisation based on Windows connections to remote port 443 via TCP.
+</p>
+
+<div id="mynetwork"></div>
+
+<script type="text/javascript">
+  // create an array with nodes
+  var nodes = new vis.DataSet([]);
+    // create an array with edges
+  var edges = new vis.DataSet([]);
+  //edges.add({from:1, to:2})
+
+ nodes.add([
+  {id: "TCP", text: 'item 1', label: 'Address family'}
+  ])
+  nodes.add([
+  {id: 2, text: 'item 1', label: 'IPv4'}
+  ])
+  nodes.add([
+  {id: 3, text: 'item 1', label: 'IPv6'}
+  ])
+
+  edges.add({from:"TCP", to:2})
+  edges.add({from:"TCP", to:3})
+
+  //offset for protocol type in loop
+  j=4;
+  fetch('http://localhost:10000/api/tcp-443')
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(myJson) {
+        //console.log(myJson);  
+        for (i = 0; i < myJson.length; i++) {
+          if(myJson[i]["RemoteAddress"].includes(".")){
+            //Create v4 nodes and edges
+            nodes.add([{id: i+j,label: myJson[i]["RemoteAddress"],group: 'ipv4'}])
+            edges.add({from:2, to:i+j})
+          };
+          if(myJson[i]["RemoteAddress"].includes(":")){
+            //create v6 nodes and edges
+            nodes.add([{id: i+j,label: myJson[i]["RemoteAddress"],group: 'ipv6'}]);
+            edges.add({from:3, to:i+j})
+          };
+        }
+      });
+
+  // create a network
+  var container = document.getElementById('mynetwork');
+  var data = {
+    nodes: nodes,
+    edges: edges
+  };
+  var options = {
+    autoResize: true,height:'100%',width: '100%',
+    groups: {
+      ipv4: {color:{background:'red'}, borderWidth:3},
+      ipv6: {color:{background:'green'}, borderWidth:3}
+    }
+    };
+  var network = new vis.Network(container, data, options);
+
+</script>
+<button type="submit" onclick="javascript:location.reload(true)">call</button>
+</body>
+</html>

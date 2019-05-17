@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Process | TCP Connections</title>
+
+  <script type="text/javascript" src="./TCP-443-IPs-Processes/vis.js.download"></script>
+  <link href="./TCP-443-IPs-Processes/vis-network.min.css" rel="stylesheet" type="text/css">
+
+  <style type="text/css">
+    #mynetwork {
+      width: 100pc;
+      height: 50pc;
+      border: 1px solid lightgray;
+    }
+  </style>
+  <meta http-equiv="refresh" content="600"/>
+</head>
+<body onload="startNetwork()">
+
+<p>
+  A network visualisation based on Windows process TCP connections.
+  Based on http://visjs.org
+</p>
+
+<div id="mynetwork"></div>
+
+
+<script type="text/javascript">
+  
+  function startNetwork() {
+    // create an array with nodes
+  var nodes = new vis.DataSet([]);
+    // create an array with edges
+  var edges = new vis.DataSet([]);
+
+ nodes.add([
+  {id: 1, text: 'item 1', label: 'Processes', shape: 'circle', color: 'orange'}
+  ])
+
+  fetch('http://localhost:10001/api/tcp-processes')
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(myJson) {
+        //Build nodes for IP addresses and add connection count to label
+        for(i in myJson.RemoteAddresses)
+        {
+          nodes.add([{id: i,label: i+" ["+myJson.RemoteAddresses[i]+"]", color: 'yellow'}])
+        }
+        for(i in myJson.Processes) {
+          //process name crawl
+
+          //console.log(i); 
+          //console.log(myJson.Processes[i]);
+          nodes.add([{id: i,label: i}])
+          edges.add({from:1, to:i})
+
+          //Process ID crawl for this Process
+          console.log("Process crawl")
+          for(j in myJson.Processes[i]) {
+            //ProcessID J
+            //console.log(j);
+
+            //Connections crawl for this PID
+            console.log(myJson.Processes[i][j]);
+            console.log("Connection crawl")
+            for(c in myJson.Processes[i][j]) {
+              // Connection "C"
+              console.log('C:'+c)
+              console.log(myJson.Processes[i][j][c])
+              //console.log(myJson.Processes[i][j][c].remoteIP)
+              edges.add({from:i, to:myJson.Processes[i][j][c].remoteIP,label:'PID'+j+", "+'RemotePort:'+myJson.Processes[i][j][c].remotePort})
+            }            
+          }
+        }
+      });
+
+  // create a network
+  var container = document.getElementById('mynetwork');
+  var data = {
+    nodes: nodes,
+    edges: edges
+  };
+  var options = {
+    autoResize: true,
+    height:'100%',
+    width: '100%',
+    nodes:{
+    shape:'box'},
+    configure: {
+    enabled: true,
+    filter: 'physics',
+    container: myoptions,
+    showButton: true
+    },
+    physics:{
+    enabled: true,
+    minVelocity: 0.75,
+    solver: "forceAtlas2Based",
+    forceAtlas2Based: {
+      springLength: 100
+    }}
+  }
+  var network = new vis.Network(container, data, options);
+  }
+  function UserAction() {
+  }
+</script>
+
+<button type="submit" onclick="javascript:startNetwork()">call</button>
+<div id="myoptions"></div>
+</body></html>
